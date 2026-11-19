@@ -170,44 +170,44 @@ function QuestionCentricFeedbackPage() {
     const isRewardEligible = studentCpi > 9.5 && rewardResult.granted === true && Boolean(rewardResult.coupon_code);
 
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background px-5 py-10">
-        <div className="surface-card w-full max-w-xl p-8 text-center rounded-3xl border border-border shadow-2xl space-y-6">
-          <div className="mx-auto flex size-20 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 animate-bounce">
-            <PartyPopper className="size-10" />
+      <div className="flex min-h-screen items-center justify-center bg-background px-4 sm:px-5 py-6 sm:py-10">
+        <div className="surface-card w-full max-w-xl p-5 sm:p-8 text-center rounded-2xl sm:rounded-3xl border border-border shadow-2xl space-y-4 sm:space-y-6">
+          <div className="mx-auto flex size-16 sm:size-20 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 animate-bounce">
+            <PartyPopper className="size-8 sm:size-10" />
           </div>
 
           <div>
-            <h1 className="text-2xl font-bold">Feedback Session Complete!</h1>
-            <p className="mt-2 text-sm text-muted-foreground">
+            <h1 className="text-xl sm:text-2xl font-bold">Feedback Session Complete!</h1>
+            <p className="mt-1.5 sm:mt-2 text-xs sm:text-sm text-muted-foreground">
               Thank you, <span className="font-semibold text-foreground">{eligibleQuery.data?.full_name}</span>. Confidential feedback has been submitted for all <span className="font-semibold text-foreground">{submittedCount} assigned faculty members</span>.
             </p>
           </div>
 
           {/* SINGLE COUPON DISPLAY CARD (STRICT CPI > 9.5 RESTRICTED) */}
           {isRewardEligible ? (
-            <div className="rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-background p-6 shadow-inner text-left space-y-3">
-              <div className="flex items-center gap-2 text-amber-600 font-semibold text-base">
-                <Gift className="size-5" /> High-Performance Reward Granted! ⭐
+            <div className="rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-background p-4 sm:p-6 shadow-inner text-left space-y-3">
+              <div className="flex items-center gap-2 text-amber-600 font-semibold text-sm sm:text-base">
+                <Gift className="size-4 sm:size-5" /> High-Performance Reward Granted! ⭐
               </div>
               <p className="text-xs text-muted-foreground">
                 As a high-performing student with CPI &gt; 9.5 (Your CPI: <span className="font-bold text-foreground">{studentCpi.toFixed(2)}</span>):
               </p>
 
-              <div className="rounded-xl border border-dashed border-amber-500/40 bg-card p-5 text-center">
-                <span className="text-xs font-medium uppercase text-muted-foreground tracking-wider block">
+              <div className="rounded-xl border border-dashed border-amber-500/40 bg-card p-4 sm:p-5 text-center">
+                <span className="text-[11px] sm:text-xs font-medium uppercase text-muted-foreground tracking-wider block">
                   {rewardResult.reward_type || "Coffee Coupon"} (1 Session Reward)
                 </span>
-                <span className="mt-1 text-3xl font-mono font-bold text-amber-600 tracking-wider block">
+                <span className="mt-1 text-2xl sm:text-3xl font-mono font-bold text-amber-600 tracking-wider block">
                   {rewardResult.coupon_code}
                 </span>
               </div>
-              <p className="text-xs text-center text-muted-foreground">
+              <p className="text-[11px] sm:text-xs text-center text-muted-foreground">
                 Present this single coupon code at the campus canteen to claim your free coffee!
               </p>
             </div>
           ) : (
-            <div className="rounded-2xl border border-border bg-muted/30 p-5 text-center text-sm space-y-2">
-              <div className="flex items-center justify-center gap-2 text-foreground font-semibold">
+            <div className="rounded-2xl border border-border bg-muted/30 p-4 sm:p-5 text-center text-sm space-y-2">
+              <div className="flex items-center justify-center gap-2 text-foreground font-semibold text-xs sm:text-sm">
                 ☕ Coffee Coupon Eligibility Note
               </div>
               <p className="text-xs text-muted-foreground">
@@ -224,7 +224,7 @@ function QuestionCentricFeedbackPage() {
             <ShieldCheck className="size-4" /> Confidentiality Guaranteed — Student Identity 100% Protected
           </div>
 
-          <Button asChild className="w-full py-6 text-base font-medium">
+          <Button asChild className="w-full py-4 sm:py-6 text-sm sm:text-base font-medium">
             <Link to="/student/$studentId/dashboard" params={{ studentId }}>
               Return to Student Dashboard
             </Link>
@@ -237,37 +237,42 @@ function QuestionCentricFeedbackPage() {
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       {/* Top Header */}
-      <header className="border-b border-border bg-card px-5 py-4 shadow-sm sticky top-0 z-20">
-        <div className="mx-auto flex w-full max-w-4xl items-center justify-between">
+      <header className="border-b border-border bg-card px-4 sm:px-5 py-3 sm:py-4 shadow-sm sticky top-0 z-20">
+        <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-2">
           <Button
             variant="ghost"
             size="sm"
+            className="h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm"
             onClick={() => void navigate({ to: "/student/$studentId/dashboard", params: { studentId } })}
           >
-            <ArrowLeft className="mr-1.5 size-4" /> Exit Session
+            <ArrowLeft className="mr-1 sm:mr-1.5 size-3.5 sm:size-4" />
+            <span className="hidden sm:inline">Exit Session</span>
+            <span className="sm:hidden">Exit</span>
           </Button>
-          <div className="flex items-center gap-4 text-xs font-medium text-muted-foreground">
-            <Badge variant="outline" className="gap-1 text-emerald-600 border-emerald-500/30 bg-emerald-500/10">
-              <ShieldCheck className="size-3.5" /> Anonymous Session
+          <div className="flex items-center gap-2 sm:gap-4 text-xs font-medium text-muted-foreground">
+            <Badge variant="outline" className="gap-1 text-emerald-600 border-emerald-500/30 bg-emerald-500/10 text-[11px] sm:text-xs px-2 py-0.5">
+              <ShieldCheck className="size-3 sm:size-3.5" />
+              <span className="hidden sm:inline">Anonymous Session</span>
+              <span className="sm:hidden">Anonymous</span>
             </Badge>
-            <div className="flex items-center gap-1.5">
-              <Camera className="size-4 text-emerald-500" /> Focus: <span className="font-semibold text-foreground">{focusScore}%</span>
+            <div className="flex items-center gap-1 sm:gap-1.5 text-xs">
+              <Camera className="size-3.5 sm:size-4 text-emerald-500" /> Focus: <span className="font-semibold text-foreground">{focusScore}%</span>
             </div>
           </div>
         </div>
       </header>
 
       {/* Main Feedback Container */}
-      <main className="mx-auto w-full max-w-3xl px-5 py-8 flex-1 flex flex-col">
+      <main className="mx-auto w-full max-w-3xl px-4 sm:px-5 py-5 sm:py-8 flex-1 flex flex-col">
         {/* Overall Progress Bar */}
-        <div className="mb-6 space-y-2">
+        <div className="mb-4 sm:mb-6 space-y-1.5 sm:space-y-2">
           <div className="flex justify-between text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             <span>
               {currentStep <= 5 ? `Question ${currentStep} of 5 — All Faculty` : "Final Confirmation"}
             </span>
             <span>{progressPercentage}% Completed</span>
           </div>
-          <Progress value={progressPercentage} className="h-2.5 rounded-full" />
+          <Progress value={progressPercentage} className="h-2 sm:h-2.5 rounded-full" />
         </div>
 
         {eligibleQuery.isLoading ? (
@@ -289,36 +294,36 @@ function QuestionCentricFeedbackPage() {
             </Button>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* ---------------- QUESTION 1: STAR RATING (ALL FACULTY) ---------------- */}
             {currentStep === 1 && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                <div className="surface-card p-6 rounded-2xl border border-primary/20 bg-primary/5 text-center">
-                  <Badge variant="outline" className="border-primary/30 bg-primary/10 text-primary mb-2">
+              <div className="space-y-4 sm:space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                <div className="surface-card p-4 sm:p-6 rounded-2xl border border-primary/20 bg-primary/5 text-center">
+                  <Badge variant="outline" className="border-primary/30 bg-primary/10 text-primary mb-2 text-xs">
                     Question 1 of 5 — Overall Teaching Clarity
                   </Badge>
-                  <h2 className="text-xl font-bold text-foreground">How clearly does each faculty member explain concepts?</h2>
+                  <h2 className="text-lg sm:text-xl font-bold text-foreground">How clearly does each faculty member explain concepts?</h2>
                   <p className="mt-1 text-xs text-muted-foreground">Rate all assigned faculty members from 1 to 5 Stars.</p>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {unsubmittedSubjects.map((s) => (
-                    <div key={s.faculty_id} className="surface-card p-5 rounded-2xl border border-border shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                      <div>
+                    <div key={s.faculty_id} className="surface-card p-4 sm:p-5 rounded-xl sm:rounded-2xl border border-border shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+                      <div className="min-w-0">
                         <span className="text-xs font-mono font-bold text-primary">{s.subject_code}</span>
-                        <h3 className="text-base font-semibold text-foreground">{s.subject_name}</h3>
-                        <p className="text-sm text-muted-foreground flex items-center gap-1.5 mt-0.5">
-                          <UserCheck className="size-4 text-primary" /> {s.faculty_name} ({s.designation})
+                        <h3 className="text-sm sm:text-base font-semibold text-foreground truncate">{s.subject_name}</h3>
+                        <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1.5 mt-0.5 truncate">
+                          <UserCheck className="size-3.5 sm:size-4 text-primary shrink-0" /> {s.faculty_name} ({s.designation})
                         </p>
                       </div>
 
-                      <div className="flex flex-col items-center sm:items-end">
+                      <div className="flex flex-col items-center sm:items-end pt-1 sm:pt-0">
                         <StarRating
                           label={s.faculty_name}
                           value={ratingsMap[s.faculty_id] ?? 5}
                           onChange={(val) => setRatingsMap((prev) => ({ ...prev, [s.faculty_id]: val }))}
                         />
-                        <span className="mt-1 text-xs text-muted-foreground">
+                        <span className="mt-1 text-[11px] sm:text-xs text-muted-foreground">
                           {ratingsMap[s.faculty_id] ?? 5} / 5 Stars
                         </span>
                       </div>
@@ -326,69 +331,69 @@ function QuestionCentricFeedbackPage() {
                   ))}
                 </div>
 
-                <Button onClick={() => setCurrentStep(2)} className="w-full py-6 text-base font-semibold">
-                  Next Question: Pacing & Clarity <ArrowRight className="ml-2 size-5" />
+                <Button onClick={() => setCurrentStep(2)} className="w-full py-4 sm:py-6 text-sm sm:text-base font-semibold">
+                  Next Question: Pacing & Clarity <ArrowRight className="ml-2 size-4 sm:size-5" />
                 </Button>
               </div>
             )}
 
             {/* ---------------- QUESTION 2: SWIPE AGREE / DISAGREE (ALL FACULTY) ---------------- */}
             {currentStep === 2 && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                <div className="surface-card p-6 rounded-2xl border border-primary/20 bg-primary/5 text-center">
-                  <Badge variant="outline" className="border-primary/30 bg-primary/10 text-primary mb-2">
+              <div className="space-y-4 sm:space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                <div className="surface-card p-4 sm:p-6 rounded-2xl border border-primary/20 bg-primary/5 text-center">
+                  <Badge variant="outline" className="border-primary/30 bg-primary/10 text-primary mb-2 text-xs">
                     Question 2 of 5 — Pacing & Encouragement
                   </Badge>
-                  <h2 className="text-xl font-bold text-foreground">"The faculty encourages students to ask questions and clarifies doubts effectively."</h2>
+                  <h2 className="text-lg sm:text-xl font-bold text-foreground">"The faculty encourages students to ask questions and clarifies doubts effectively."</h2>
                   <p className="mt-1 text-xs text-muted-foreground">Select Agree or Disagree for each faculty member.</p>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {unsubmittedSubjects.map((s) => (
-                    <div key={s.faculty_id} className="surface-card p-5 rounded-2xl border border-border shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                      <div>
+                    <div key={s.faculty_id} className="surface-card p-4 sm:p-5 rounded-xl sm:rounded-2xl border border-border shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+                      <div className="min-w-0">
                         <span className="text-xs font-mono font-bold text-primary">{s.subject_code}</span>
-                        <h3 className="text-base font-semibold text-foreground">{s.subject_name}</h3>
-                        <p className="text-sm text-muted-foreground flex items-center gap-1.5 mt-0.5">
-                          <UserCheck className="size-4 text-primary" /> {s.faculty_name}
+                        <h3 className="text-sm sm:text-base font-semibold text-foreground truncate">{s.subject_name}</h3>
+                        <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1.5 mt-0.5 truncate">
+                          <UserCheck className="size-3.5 sm:size-4 text-primary shrink-0" /> {s.faculty_name}
                         </p>
                       </div>
 
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
                         <button
                           type="button"
                           onClick={() => setSwipeMap((prev) => ({ ...prev, [s.faculty_id]: "DISAGREE" }))}
-                          className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl border font-medium text-sm transition-all ${
+                          className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border font-medium text-xs sm:text-sm transition-all ${
                             swipeMap[s.faculty_id] === "DISAGREE"
                               ? "border-rose-500 bg-rose-500/15 text-rose-600 font-semibold shadow-sm"
                               : "border-border hover:border-rose-300 text-muted-foreground"
                           }`}
                         >
-                          <ThumbsDown className="size-4" /> Disagree
+                          <ThumbsDown className="size-3.5 sm:size-4" /> Disagree
                         </button>
 
                         <button
                           type="button"
                           onClick={() => setSwipeMap((prev) => ({ ...prev, [s.faculty_id]: "AGREE" }))}
-                          className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl border font-medium text-sm transition-all ${
+                          className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border font-medium text-xs sm:text-sm transition-all ${
                             swipeMap[s.faculty_id] === "AGREE"
                               ? "border-emerald-500 bg-emerald-500/15 text-emerald-600 font-semibold shadow-sm"
                               : "border-border hover:border-emerald-300 text-muted-foreground"
                           }`}
                         >
-                          <ThumbsUp className="size-4" /> Agree
+                          <ThumbsUp className="size-3.5 sm:size-4" /> Agree
                         </button>
                       </div>
                     </div>
                   ))}
                 </div>
 
-                <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => setCurrentStep(1)} className="w-1/3 py-6">
+                <div className="flex gap-2 sm:gap-3">
+                  <Button variant="outline" onClick={() => setCurrentStep(1)} className="w-1/3 py-4 sm:py-6 text-xs sm:text-sm">
                     Back
                   </Button>
-                  <Button onClick={() => setCurrentStep(3)} className="w-2/3 py-6 text-base font-semibold">
-                    Next Question: Engagement Slider <ArrowRight className="ml-2 size-5" />
+                  <Button onClick={() => setCurrentStep(3)} className="w-2/3 py-4 sm:py-6 text-xs sm:text-base font-semibold">
+                    Next Question <ArrowRight className="ml-1.5 sm:ml-2 size-4 sm:size-5" />
                   </Button>
                 </div>
               </div>
@@ -396,26 +401,26 @@ function QuestionCentricFeedbackPage() {
 
             {/* ---------------- QUESTION 3: SLIDER SATISFACTION (ALL FACULTY) ---------------- */}
             {currentStep === 3 && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                <div className="surface-card p-6 rounded-2xl border border-primary/20 bg-primary/5 text-center">
-                  <Badge variant="outline" className="border-primary/30 bg-primary/10 text-primary mb-2">
+              <div className="space-y-4 sm:space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                <div className="surface-card p-4 sm:p-6 rounded-2xl border border-primary/20 bg-primary/5 text-center">
+                  <Badge variant="outline" className="border-primary/30 bg-primary/10 text-primary mb-2 text-xs">
                     Question 3 of 5 — Engagement & Interactive Experience
                   </Badge>
-                  <h2 className="text-xl font-bold text-foreground">How satisfied are you with overall interactive classroom experience?</h2>
+                  <h2 className="text-lg sm:text-xl font-bold text-foreground">How satisfied are you with overall interactive classroom experience?</h2>
                   <p className="mt-1 text-xs text-muted-foreground">Adjust the slider from 0% to 100% for each faculty member.</p>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {unsubmittedSubjects.map((s) => {
                     const currentVal = sliderMap[s.faculty_id] ?? 80;
                     return (
-                      <div key={s.faculty_id} className="surface-card p-5 rounded-2xl border border-border shadow-sm space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div>
+                      <div key={s.faculty_id} className="surface-card p-4 sm:p-5 rounded-xl sm:rounded-2xl border border-border shadow-sm space-y-2 sm:space-y-3">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="min-w-0">
                             <span className="text-xs font-mono font-bold text-primary">{s.subject_code}</span>
-                            <h3 className="text-base font-semibold text-foreground">{s.subject_name} — {s.faculty_name}</h3>
+                            <h3 className="text-sm sm:text-base font-semibold text-foreground truncate">{s.subject_name} — {s.faculty_name}</h3>
                           </div>
-                          <span className="text-sm font-bold text-primary">
+                          <span className="text-xs sm:text-sm font-bold text-primary shrink-0">
                             {getSliderLabel(currentVal)} ({currentVal}%)
                           </span>
                         </div>
@@ -430,19 +435,19 @@ function QuestionCentricFeedbackPage() {
                               setSliderMap((prev) => ({ ...prev, [s.faculty_id]: val[0]! }));
                             }
                           }}
-                          className="w-full py-2"
+                          className="w-full py-2 px-1"
                         />
                       </div>
                     );
                   })}
                 </div>
 
-                <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => setCurrentStep(2)} className="w-1/3 py-6">
+                <div className="flex gap-2 sm:gap-3">
+                  <Button variant="outline" onClick={() => setCurrentStep(2)} className="w-1/3 py-4 sm:py-6 text-xs sm:text-sm">
                     Back
                   </Button>
-                  <Button onClick={() => setCurrentStep(4)} className="w-2/3 py-6 text-base font-semibold">
-                    Next Question: Improvement Area <ArrowRight className="ml-2 size-5" />
+                  <Button onClick={() => setCurrentStep(4)} className="w-2/3 py-4 sm:py-6 text-xs sm:text-base font-semibold">
+                    Next Question <ArrowRight className="ml-1.5 sm:ml-2 size-4 sm:size-5" />
                   </Button>
                 </div>
               </div>
@@ -450,27 +455,27 @@ function QuestionCentricFeedbackPage() {
 
             {/* ---------------- QUESTION 4: MCQ CHOICE (ALL FACULTY) ---------------- */}
             {currentStep === 4 && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                <div className="surface-card p-6 rounded-2xl border border-primary/20 bg-primary/5 text-center">
-                  <Badge variant="outline" className="border-primary/30 bg-primary/10 text-primary mb-2">
+              <div className="space-y-4 sm:space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                <div className="surface-card p-4 sm:p-6 rounded-2xl border border-primary/20 bg-primary/5 text-center">
+                  <Badge variant="outline" className="border-primary/30 bg-primary/10 text-primary mb-2 text-xs">
                     Question 4 of 5 — Target Improvement Selection
                   </Badge>
-                  <h2 className="text-xl font-bold text-foreground">Which area could each faculty member focus on improving most?</h2>
+                  <h2 className="text-lg sm:text-xl font-bold text-foreground">Which area could each faculty member focus on improving most?</h2>
                   <p className="mt-1 text-xs text-muted-foreground">Select one option for each faculty member.</p>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {unsubmittedSubjects.map((s) => (
-                    <div key={s.faculty_id} className="surface-card p-5 rounded-2xl border border-border shadow-sm space-y-3">
-                      <div>
+                    <div key={s.faculty_id} className="surface-card p-4 sm:p-5 rounded-xl sm:rounded-2xl border border-border shadow-sm space-y-2 sm:space-y-2.5">
+                      <div className="min-w-0">
                         <span className="text-xs font-mono font-bold text-primary">{s.subject_code}</span>
-                        <h3 className="text-base font-semibold text-foreground">{s.subject_name} — {s.faculty_name}</h3>
+                        <h3 className="text-sm sm:text-base font-semibold text-foreground truncate">{s.subject_name} — {s.faculty_name}</h3>
                       </div>
 
                       <select
                         value={mcqMap[s.faculty_id] ?? "No major improvement required"}
                         onChange={(e) => setMcqMap((prev) => ({ ...prev, [s.faculty_id]: e.target.value }))}
-                        className="w-full rounded-xl border border-input bg-card p-3 text-sm font-medium focus:ring-2 focus:ring-primary"
+                        className="w-full rounded-xl border border-input bg-card p-2.5 sm:p-3 text-xs sm:text-sm font-medium focus:ring-2 focus:ring-primary"
                       >
                         {MCQ_OPTIONS.map((opt) => (
                           <option key={opt} value={opt}>
@@ -482,12 +487,12 @@ function QuestionCentricFeedbackPage() {
                   ))}
                 </div>
 
-                <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => setCurrentStep(3)} className="w-1/3 py-6">
+                <div className="flex gap-2 sm:gap-3">
+                  <Button variant="outline" onClick={() => setCurrentStep(3)} className="w-1/3 py-4 sm:py-6 text-xs sm:text-sm">
                     Back
                   </Button>
-                  <Button onClick={() => setCurrentStep(5)} className="w-2/3 py-6 text-base font-semibold">
-                    Next Question: Anonymous Suggestion <ArrowRight className="ml-2 size-5" />
+                  <Button onClick={() => setCurrentStep(5)} className="w-2/3 py-4 sm:py-6 text-xs sm:text-base font-semibold">
+                    Next Question <ArrowRight className="ml-1.5 sm:ml-2 size-4 sm:size-5" />
                   </Button>
                 </div>
               </div>
@@ -495,21 +500,21 @@ function QuestionCentricFeedbackPage() {
 
             {/* ---------------- QUESTION 5: ANONYMOUS SUGGESTION (ALL FACULTY) ---------------- */}
             {currentStep === 5 && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                <div className="surface-card p-6 rounded-2xl border border-primary/20 bg-primary/5 text-center">
-                  <Badge variant="outline" className="border-primary/30 bg-primary/10 text-primary mb-2">
+              <div className="space-y-4 sm:space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                <div className="surface-card p-4 sm:p-6 rounded-2xl border border-primary/20 bg-primary/5 text-center">
+                  <Badge variant="outline" className="border-primary/30 bg-primary/10 text-primary mb-2 text-xs">
                     Question 5 of 5 — Anonymous Constructive Suggestions
                   </Badge>
-                  <h2 className="text-xl font-bold text-foreground">Share constructive feedback or appreciation for each faculty member.</h2>
+                  <h2 className="text-lg sm:text-xl font-bold text-foreground">Share constructive feedback or appreciation for each faculty member.</h2>
                   <p className="mt-1 text-xs text-muted-foreground">Optional. Analyzed anonymously by AI sentiment pipeline.</p>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {unsubmittedSubjects.map((s) => (
-                    <div key={s.faculty_id} className="surface-card p-5 rounded-2xl border border-border shadow-sm space-y-2">
-                      <div>
+                    <div key={s.faculty_id} className="surface-card p-4 sm:p-5 rounded-xl sm:rounded-2xl border border-border shadow-sm space-y-2">
+                      <div className="min-w-0">
                         <span className="text-xs font-mono font-bold text-primary">{s.subject_code}</span>
-                        <h3 className="text-base font-semibold text-foreground">{s.subject_name} — {s.faculty_name}</h3>
+                        <h3 className="text-sm sm:text-base font-semibold text-foreground truncate">{s.subject_name} — {s.faculty_name}</h3>
                       </div>
 
                       <Textarea
@@ -517,18 +522,18 @@ function QuestionCentricFeedbackPage() {
                         placeholder={`Share constructive feedback or appreciation for ${s.faculty_name}...`}
                         value={suggestionMap[s.faculty_id] ?? ""}
                         onChange={(e) => setSuggestionMap((prev) => ({ ...prev, [s.faculty_id]: e.target.value }))}
-                        className="rounded-xl"
+                        className="rounded-xl text-xs sm:text-sm"
                       />
                     </div>
                   ))}
                 </div>
 
-                <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => setCurrentStep(4)} className="w-1/3 py-6">
+                <div className="flex gap-2 sm:gap-3">
+                  <Button variant="outline" onClick={() => setCurrentStep(4)} className="w-1/3 py-4 sm:py-6 text-xs sm:text-sm">
                     Back
                   </Button>
-                  <Button onClick={() => setCurrentStep(6)} className="w-2/3 py-6 text-base font-semibold">
-                    Review Session Summary <ArrowRight className="ml-2 size-5" />
+                  <Button onClick={() => setCurrentStep(6)} className="w-2/3 py-4 sm:py-6 text-xs sm:text-base font-semibold">
+                    Review Session <ArrowRight className="ml-1.5 sm:ml-2 size-4 sm:size-5" />
                   </Button>
                 </div>
               </div>
@@ -536,32 +541,32 @@ function QuestionCentricFeedbackPage() {
 
             {/* ---------------- STEP 6: FINAL REVIEW & ATOMIC SUBMISSION ---------------- */}
             {currentStep === 6 && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                <div className="surface-card p-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 text-center space-y-2">
-                  <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/10 text-emerald-600">
+              <div className="space-y-4 sm:space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                <div className="surface-card p-4 sm:p-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 text-center space-y-1.5 sm:space-y-2">
+                  <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/10 text-emerald-600 text-xs">
                     Final Confirmation & Submission
                   </Badge>
-                  <h2 className="text-xl font-bold text-foreground">Review Feedback for All Assigned Faculty</h2>
+                  <h2 className="text-lg sm:text-xl font-bold text-foreground">Review Feedback for All Assigned Faculty</h2>
                   <p className="text-xs text-muted-foreground">
                     Submitting will securely record your input for {unsubmittedSubjects.length} faculty members and evaluate your reward coupon.
                   </p>
                 </div>
 
-                <div className="surface-card p-5 rounded-2xl border border-border space-y-3">
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-2">
+                <div className="surface-card p-4 sm:p-5 rounded-xl sm:rounded-2xl border border-border space-y-2.5 sm:space-y-3">
+                  <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-muted-foreground mb-1.5 sm:mb-2">
                     Session Response Summary
                   </h3>
 
                   {unsubmittedSubjects.map((s) => (
-                    <div key={s.faculty_id} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0 text-sm">
-                      <div>
-                        <span className="font-semibold text-foreground">{s.faculty_name}</span>
-                        <span className="text-xs text-muted-foreground block">{s.subject_name} ({s.subject_code})</span>
+                    <div key={s.faculty_id} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0 text-xs sm:text-sm gap-2">
+                      <div className="min-w-0">
+                        <span className="font-semibold text-foreground truncate block">{s.faculty_name}</span>
+                        <span className="text-[11px] sm:text-xs text-muted-foreground truncate block">{s.subject_name} ({s.subject_code})</span>
                       </div>
 
-                      <div className="text-right">
+                      <div className="text-right shrink-0">
                         <span className="font-bold text-primary">{ratingsMap[s.faculty_id] ?? 5} ⭐</span>
-                        <span className="text-xs text-emerald-600 block font-medium">
+                        <span className="text-[11px] sm:text-xs text-emerald-600 block font-medium">
                           {swipeMap[s.faculty_id] ?? "AGREE"} • {sliderMap[s.faculty_id] ?? 80}%
                         </span>
                       </div>
@@ -569,16 +574,16 @@ function QuestionCentricFeedbackPage() {
                   ))}
                 </div>
 
-                <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => setCurrentStep(5)} className="w-1/3 py-6">
+                <div className="flex gap-2 sm:gap-3">
+                  <Button variant="outline" onClick={() => setCurrentStep(5)} className="w-1/3 py-4 sm:py-6 text-xs sm:text-sm">
                     Back to Edit
                   </Button>
                   <Button
                     onClick={() => mutation.mutate()}
                     disabled={mutation.isPending}
-                    className="w-2/3 py-6 text-base font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg"
+                    className="w-2/3 py-4 sm:py-6 text-xs sm:text-base font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg"
                   >
-                    {mutation.isPending ? "Submitting All Responses..." : "Submit Complete Session & Get Reward"}
+                    {mutation.isPending ? "Submitting..." : "Submit All Responses"}
                   </Button>
                 </div>
               </div>

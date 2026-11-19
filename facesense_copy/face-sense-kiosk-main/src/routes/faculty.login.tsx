@@ -45,14 +45,14 @@ function FacultyLoginPage() {
   };
 
   return (
-    <div className="campus-gradient flex min-h-screen items-center justify-center px-5 py-12">
-      <div className="surface-card w-full max-w-md p-8 rounded-3xl border border-border shadow-2xl space-y-6">
-        <div className="text-center space-y-2">
-          <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
-            <UserCheck className="size-6" />
+    <div className="campus-gradient flex min-h-screen items-center justify-center px-4 sm:px-5 py-6 sm:py-12">
+      <div className="surface-card w-full max-w-md p-5 sm:p-8 rounded-2xl sm:rounded-3xl border border-border shadow-2xl space-y-5 sm:space-y-6">
+        <div className="text-center space-y-1.5 sm:space-y-2">
+          <div className="mx-auto flex size-11 sm:size-12 items-center justify-center rounded-xl sm:rounded-2xl bg-primary text-primary-foreground">
+            <UserCheck className="size-5 sm:size-6" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground">Faculty Portal Login</h1>
-          <p className="text-sm text-muted-foreground">Access your anonymous aggregated feedback report</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Faculty Portal Login</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">Access your anonymous aggregated feedback report</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">

@@ -64,7 +64,7 @@ function AdminLoginPage() {
   };
 
   return (
-    <div className="campus-gradient flex min-h-screen items-center justify-center px-5 py-10">
+    <div className="campus-gradient flex min-h-screen items-center justify-center px-4 sm:px-5 py-6 sm:py-10">
       <div className="w-full max-w-md">
         <Link to="/" className="mb-6 flex items-center justify-center gap-2.5">
           <span className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
@@ -73,7 +73,7 @@ function AdminLoginPage() {
           <span className="font-display text-lg font-semibold">FaceSense AI</span>
         </Link>
 
-        <div className="surface-card p-6 md:p-8">
+        <div className="surface-card p-5 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl">
           <h1 className="text-2xl font-semibold">Admin sign in</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Manage students, faculty and feedback analytics.
