@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: facesense-backend
+    env: python
+    region: oregon
+    plan: free
+    branch: main
+    rootDir: facesense_copy/facesense_copy/backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: RECOGNITION_THRESHOLD
+        value: 0.48
+      - key: LIVENESS_THRESHOLD
+        value: 0.70
+      - key: FOCUS_THRESHOLD
+        value: 75.0
+      - key: MIN_AGGREGATION_THRESHOLD
+        value: 5

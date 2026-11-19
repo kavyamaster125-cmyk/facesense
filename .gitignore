@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+venv/
+.venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Build outputs
+.output/
+dist/
+dist-ssr/
+.nitro/
+.tanstack/
+.vinxi/
+.wrangler/
+
+# Databases & local logs
+*.db
+*.sqlite3
+logs/
+*.log
+
+# Sensitive environment configs
+.env
+.env.local
+.env.*.local
+
+# IDEs & OS
+.DS_Store
+.idea/
+.vscode/
+Thumbs.db

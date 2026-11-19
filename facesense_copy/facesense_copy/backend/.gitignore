@@ -1,0 +1,34 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# Environment variables
+.env
+.env.local
+
+# Databases and Local SQLite
+*.db
+*.sqlite3
+facesense.db
+facefeedback.db
+
+# Logs
+logs/
+*.log
+
+# Uploads and temporary media
+uploads/faces/*
+!uploads/faces/.gitkeep
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+*.swp
