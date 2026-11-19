@@ -12,22 +12,30 @@ from app.config import RECOGNITION_THRESHOLD
 UPLOADS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads", "faces")
 os.makedirs(UPLOADS_DIR, exist_ok=True)
 
-# ---------------- INSIGHTFACE ARCFACE ENGINE INITIALIZATION ---------------- #
-INSIGHT_APP = None
-try:
-    import insightface
-    AI_ROOT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "ai")
-    local_buffalo = os.path.join(AI_ROOT_DIR, "models", "buffalo_s")
-    kwargs = {"name": "buffalo_s", "allowed_modules": ["detection", "recognition"], "providers": ["CPUExecutionProvider"]}
-    if os.path.exists(local_buffalo):
-        kwargs["root"] = AI_ROOT_DIR
+# ---------------- ARCFACE ONNX ENGINE INITIALIZATION ---------------- #
+SCRFD_DETECTOR = None
+ARCFACE_RECOGNIZER = None
+AI_ERROR = None
 
-    INSIGHT_APP = insightface.app.FaceAnalysis(**kwargs)
-    INSIGHT_APP.prepare(ctx_id=0, det_size=(640, 640))
-    print("[FACE RECOGNITION] InsightFace ArcFace (512-dim) Engine Initialized Successfully!")
+try:
+    from app.ai.scrfd import SCRFD
+    from app.ai.arcface_onnx import ArcFaceONNX
+
+    AI_ROOT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "ai")
+    det_path = os.path.join(AI_ROOT_DIR, "models", "buffalo_s", "det_500m.onnx")
+    rec_path = os.path.join(AI_ROOT_DIR, "models", "buffalo_s", "w600k_mbf.onnx")
+
+    if os.path.exists(det_path) and os.path.exists(rec_path):
+        SCRFD_DETECTOR = SCRFD(det_path)
+        SCRFD_DETECTOR.prepare(ctx_id=0, input_size=(640, 640))
+        ARCFACE_RECOGNIZER = ArcFaceONNX(rec_path)
+        print("[FACE RECOGNITION] Pure ONNX ArcFace Engine Initialized Successfully!")
+    else:
+        AI_ERROR = f"ONNX models not found in {det_path}"
+        print(f"[FACE RECOGNITION] {AI_ERROR}")
 except Exception as e:
-    print("[FACE RECOGNITION] InsightFace initialization info:", e)
-    INSIGHT_APP = None
+    AI_ERROR = f"{type(e).__name__}: {str(e)}"
+    print("[FACE RECOGNITION] Pure ONNX initialization info:", e)
 
 
 def bytes_to_image(image_bytes: bytes) -> Optional[np.ndarray]:
@@ -42,30 +50,30 @@ def bytes_to_image(image_bytes: bytes) -> Optional[np.ndarray]:
 
 def extract_face_embedding(image: np.ndarray) -> Tuple[Optional[List[float]], Optional[str]]:
     """
-    Extracts a 512-dimensional facial embedding vector.
-    Uses InsightFace ArcFace model with fallback Deep Landmark Feature Engine.
-    Discards 100% of background (classroom/lab background) so recognition is background-invariant.
+    Extracts a 512-dimensional facial embedding vector using pure ONNX ArcFace (MobileFaceNet + SCRFD).
+    Discards 100% of background so recognition is background-invariant and robust.
     """
     if image is None or image.size == 0:
         return None, "Invalid image data received."
 
-    # 1. Primary ArcFace InsightFace Engine (Isolates Face Bounding Box & Ignores Background)
-    if INSIGHT_APP is not None:
+    # 1. Primary Pure ONNX ArcFace Engine (Local det_500m & w600k_mbf)
+    if SCRFD_DETECTOR is not None and ARCFACE_RECOGNIZER is not None:
         try:
-            faces = INSIGHT_APP.get(image)
-            if len(faces) > 1:
-                print(f"[FACE BACKEND] Multiple faces detected: {len(faces)} faces.")
-                return None, f"Multiple faces detected ({len(faces)} people visible). Please ensure only one person is visible."
-            if len(faces) == 1:
-                raw_emb = faces[0].embedding.astype(np.float32)
+            bboxes, kpss = SCRFD_DETECTOR.detect(image, max_num=0, metric='default')
+            if len(bboxes) > 1:
+                print(f"[FACE BACKEND] Multiple faces detected: {len(bboxes)} faces.")
+                return None, f"Multiple faces detected ({len(bboxes)} people visible). Please ensure only one person is visible."
+            if len(bboxes) == 1 and len(kpss) > 0:
+                face_obj = type('Face', (), {'kps': kpss[0]})()
+                raw_emb = ARCFACE_RECOGNIZER.get(image, face_obj).astype(np.float32)
                 norm = np.linalg.norm(raw_emb)
                 norm_emb = (raw_emb / norm).tolist() if norm > 0 else raw_emb.tolist()
-                bbox = faces[0].bbox.astype(int)
-                print(f"[FACE BACKEND] InsightFace ArcFace: 1 face detected | Bounding box: x1={bbox[0]}, y1={bbox[1]}, w={bbox[2]-bbox[0]}, h={bbox[3]-bbox[1]} | Dim: {len(norm_emb)}")
+                bbox = bboxes[0].astype(int)
+                print(f"[FACE BACKEND] ONNX ArcFace: 1 face detected | Bounding box: x1={bbox[0]}, y1={bbox[1]}, w={bbox[2]-bbox[0]}, h={bbox[3]-bbox[1]} | Dim: {len(norm_emb)}")
                 return norm_emb, None
-            print("[FACE BACKEND] InsightFace det_500m returned 0 faces, executing landmark signature fallback...")
+            print("[FACE BACKEND] SCRFD detector returned 0 faces, falling back to signature...")
         except Exception as e:
-            print("[FACE BACKEND] InsightFace extraction exception:", e)
+            print("[FACE BACKEND] ONNX ArcFace extraction exception:", e)
 
     # 2. Fallback Normalized Facial Landmark & Texture Signature (With 100% Background Masking)
     try:

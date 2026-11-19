@@ -156,9 +156,13 @@ app.include_router(admin_portal.router)
 
 @app.get("/")
 def root():
+    from app.services.face_recognition_service import SCRFD_DETECTOR, ARCFACE_RECOGNIZER, AI_ERROR
+    ai_status = "Pure ONNX ArcFace (Production)" if (SCRFD_DETECTOR and ARCFACE_RECOGNIZER) else "Fallback Heuristic"
     return {
         "app": "FaceSense AI",
         "status": "online",
         "version": "2.0.0",
-        "documentation": "/docs"
+        "documentation": "/docs",
+        "ai_engine": ai_status,
+        "ai_error": AI_ERROR
     }
