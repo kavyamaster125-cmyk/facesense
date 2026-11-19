@@ -35,61 +35,22 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+function ErrorComponent({ error }: { error: Error; reset: () => void }) {
   console.error("[Route Error Caught]:", error);
-  const router = useRouter();
-  const [retried, setRetried] = useState(false);
 
   useEffect(() => {
-    // Automatically auto-recover once immediately so transient transition glitches never stop the student
-    if (!retried) {
-      setRetried(true);
-      const timer = setTimeout(() => {
-        router.invalidate();
-        reset();
-      }, 50);
-      return () => clearTimeout(timer);
-    }
-  }, [retried, reset, router]);
-
-  // While auto-retrying, show a clean spinner instead of the error screen
-  if (!retried) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background px-4">
-        <div className="flex flex-col items-center gap-3">
-          <div className="size-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-          <p className="text-sm font-medium text-muted-foreground">Loading dashboard…</p>
-        </div>
-      </div>
-    );
-  }
+    // Automatically reload the page cleanly so any transient transition error recovers immediately
+    const timer = setTimeout(() => {
+      window.location.reload();
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          This page didn't load
-        </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back home.
-        </p>
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
-          <button
-            onClick={() => {
-              router.invalidate();
-              reset();
-            }}
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Try again
-          </button>
-          <a
-            href="/"
-            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
-          >
-            Go home
-          </a>
-        </div>
+      <div className="flex flex-col items-center gap-3">
+        <div className="size-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        <p className="text-sm font-medium text-muted-foreground">Loading FaceSense AI…</p>
       </div>
     </div>
   );

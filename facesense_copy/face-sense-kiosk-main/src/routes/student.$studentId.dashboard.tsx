@@ -20,14 +20,13 @@ export const Route = createFileRoute("/student/$studentId/dashboard")({
     ],
   }),
   component: StudentDashboardPage,
-  errorComponent: ({ reset }) => {
-    // Immediate auto-recovery if any transient glitch happens during dashboard navigation
+  errorComponent: () => {
     useEffect(() => {
       const timer = setTimeout(() => {
-        reset();
+        window.location.reload();
       }, 50);
       return () => clearTimeout(timer);
-    }, [reset]);
+    }, []);
 
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -45,8 +44,8 @@ import { toast } from "sonner";
 import { Award, Percent } from "lucide-react";
 
 function StudentDashboardPage() {
-  const { studentId } = useParams({ from: "/student/$studentId/dashboard" });
-  const navigate = useNavigate();
+  const { studentId } = Route.useParams();
+  const navigate = Route.useNavigate();
   const id = Number(studentId);
 
   const { data, isLoading, error, refetch } = useQuery({

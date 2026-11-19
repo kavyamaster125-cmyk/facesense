@@ -80,10 +80,7 @@ function FaceLoginPage() {
           <FaceLivenessCapture
             onAuthenticated={(studentId, fullName) => {
               toast.success(`Identity Verified: Welcome, ${fullName}!`);
-              void navigate({
-                to: "/student/$studentId/dashboard",
-                params: { studentId: String(studentId) },
-              });
+              window.location.assign(`/student/${studentId}/dashboard`);
             }}
             onError={(msg) => setError(msg)}
           />
