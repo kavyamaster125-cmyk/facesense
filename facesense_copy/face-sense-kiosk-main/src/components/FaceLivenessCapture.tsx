@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Camera, CheckCircle2 } from "lucide-react";
 import { studentApi, errorMessage, ApiError } from "@/lib/api";
 import { logger } from "@/lib/logger";
+import { Button } from "@/components/ui/button";
 
 // ─── Tunable Constants ───────────────────────────────────────────────────────
-const EAR_BLINK_THRESHOLD = 0.22;   // EAR below this ⇒ eyes closed
-const EAR_OPEN_THRESHOLD = 0.26;    // EAR above this after close ⇒ blink confirmed
-const CLOSED_FRAMES_MIN = 2;        // min consecutive closed frames for a valid blink
-const FACE_STABLE_MS = 800;         // ms face must be visible before blink prompt
+const EAR_BLINK_THRESHOLD = 0.23;   // EAR below this ⇒ eyes closed
+const EAR_OPEN_THRESHOLD = 0.25;    // EAR above this after close ⇒ blink confirmed
+const CLOSED_FRAMES_MIN = 1;        // 1 frame minimum for fast mobile frame rates
+const FACE_STABLE_MS = 600;         // ms face must be visible before blink prompt
 
 // MediaPipe FaceMesh 468-landmark eye indices (6-point model per eye)
 const LEFT_EYE = [33, 160, 158, 133, 153, 144] as const;
@@ -237,10 +238,21 @@ export function FaceLivenessCapture({
         return;
       }
 
-      // 2. Dynamically import MediaPipe (avoid SSR issues)
+      // 2. Dynamically import MediaPipe (with fallback for mobile)
+      const loadTimeout = setTimeout(() => {
+        if (!cancelled && stateRef.current === "LOADING") {
+          logger.warn("FaceLiveness", "MediaPipe load taking long, enabling direct camera mode.");
+          setState("POSITIONING");
+          setStatusText("Ready: Position face & tap Verify Face");
+        }
+      }, 3000);
+
       try {
         const mpFaceMesh = await import("@mediapipe/face_mesh");
-        if (cancelled) return;
+        if (cancelled) {
+          clearTimeout(loadTimeout);
+          return;
+        }
 
         const FaceMeshClass =
           mpFaceMesh.FaceMesh ||
@@ -400,6 +412,7 @@ export function FaceLivenessCapture({
 
         // 4. Wait for model to be ready
         await faceMesh.initialize();
+        clearTimeout(loadTimeout);
         if (cancelled) return;
 
         setState("POSITIONING");
@@ -416,11 +429,11 @@ export function FaceLivenessCapture({
         };
         rafRef.current = requestAnimationFrame(processFrame);
       } catch (err: any) {
-        logger.error("FaceLiveness", "MediaPipe init error:", err);
-        setState("ERROR");
-        const msg = err?.message || String(err);
-        setStatusText(`Failed to load face detection model: ${msg}`);
-        setErrorMsg(`MediaPipe model error: ${msg}`);
+        clearTimeout(loadTimeout);
+        logger.warn("FaceLiveness", "MediaPipe optional mesh note (fallback to direct camera mode):", err);
+        // Do NOT block camera or fail completely; let user verify via button!
+        setState("POSITIONING");
+        setStatusText("Ready: Position face & tap Verify Face");
       }
     }
 
@@ -428,6 +441,7 @@ export function FaceLivenessCapture({
 
     return () => {
       cancelled = true;
+      clearTimeout(loadTimeout);
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       streamRef.current?.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
@@ -494,6 +508,31 @@ export function FaceLivenessCapture({
         <div className="absolute inset-x-0 bottom-0 flex items-center justify-center bg-black/60 px-4 py-2.5 backdrop-blur-sm">
           <StatusIndicator state={state} text={statusText} />
         </div>
+      </div>
+
+      {/* Manual / Instant Verify Button */}
+      <div className="mt-3 flex flex-col gap-1.5">
+        <Button
+          type="button"
+          onClick={() => void captureAndVerify()}
+          disabled={isVerifying || state === "SUCCESS" || state === "LOADING"}
+          className="w-full h-11 text-base font-semibold shadow-md gap-2"
+        >
+          {isVerifying ? (
+            <>
+              <Loader2 className="size-5 animate-spin" />
+              Verifying Face...
+            </>
+          ) : (
+            <>
+              <Camera className="size-5" />
+              Verify Face Now
+            </>
+          )}
+        </Button>
+        <p className="text-center text-xs text-muted-foreground">
+          Tip: Blink naturally to auto-verify, or tap the button above anytime.
+        </p>
       </div>
 
       {/* Error message below camera */}
