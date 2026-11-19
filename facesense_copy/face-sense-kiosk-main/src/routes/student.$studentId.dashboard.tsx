@@ -20,9 +20,27 @@ export const Route = createFileRoute("/student/$studentId/dashboard")({
     ],
   }),
   component: StudentDashboardPage,
+  errorComponent: ({ reset }) => {
+    // Immediate auto-recovery if any transient glitch happens during dashboard navigation
+    useEffect(() => {
+      const timer = setTimeout(() => {
+        reset();
+      }, 50);
+      return () => clearTimeout(timer);
+    }, [reset]);
+
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <div className="flex flex-col items-center gap-3">
+          <div className="size-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <p className="text-sm font-medium text-muted-foreground">Loading your dashboard…</p>
+        </div>
+      </div>
+    );
+  },
 });
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Award, Percent } from "lucide-react";
 
@@ -31,10 +49,15 @@ function StudentDashboardPage() {
   const navigate = useNavigate();
   const id = Number(studentId);
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["student-dashboard", id],
     queryFn: () => studentApi.getEligibleFaculty(id),
+    retry: 3,
+    retryDelay: (attempt) => Math.min(attempt * 400, 1500),
   });
+
+  const subjects = Array.isArray(data?.subjects) ? data.subjects : [];
+  const unsubmittedSubjects = subjects.filter((s) => !s.already_submitted);
 
   // Attendance check & redirect if <= 75%
   useEffect(() => {
@@ -145,7 +168,7 @@ function StudentDashboardPage() {
             </section>
 
             {/* Question-Centric Feedback Primary CTA */}
-            {data.subjects.filter(s => !s.already_submitted).length > 0 && (
+            {unsubmittedSubjects.length > 0 && (
               <div className="mt-6 surface-card p-6 rounded-2xl border border-primary/30 bg-gradient-to-r from-primary/10 via-primary/5 to-background shadow-lg flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div>
                   <Badge variant="outline" className="border-primary/40 bg-primary/10 text-primary font-semibold mb-1">
@@ -153,7 +176,7 @@ function StudentDashboardPage() {
                   </Badge>
                   <h2 className="text-xl font-bold text-foreground">Complete Feedback for All Assigned Faculty</h2>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Answer Question 1 to Question 5 once while reviewing all {data.subjects.filter(s => !s.already_submitted).length} remaining courses, then claim your canteen reward coupon!
+                    Answer Question 1 to Question 5 once while reviewing all {unsubmittedSubjects.length} remaining courses, then claim your canteen reward coupon!
                   </p>
                 </div>
 
@@ -162,8 +185,8 @@ function StudentDashboardPage() {
                     to="/student/$studentId/feedback/$subjectId/$facultyId"
                     params={{
                       studentId: String(id),
-                      subjectId: String(data.subjects.find(s => !s.already_submitted)?.subject_id ?? data.subjects[0]?.subject_id ?? 1),
-                      facultyId: String(data.subjects.find(s => !s.already_submitted)?.faculty_id ?? data.subjects[0]?.faculty_id ?? 1),
+                      subjectId: String(unsubmittedSubjects[0]?.subject_id ?? subjects[0]?.subject_id ?? 1),
+                      facultyId: String(unsubmittedSubjects[0]?.faculty_id ?? subjects[0]?.faculty_id ?? 1),
                     }}
                     search={{ mode: "batch" }}
                   >
@@ -176,12 +199,12 @@ function StudentDashboardPage() {
             <h2 className="mb-4 mt-8 text-xl font-semibold flex items-center justify-between">
               <span>Assigned Courses & Faculty Roster</span>
               <span className="text-sm font-normal text-muted-foreground">
-                ({data.subjects.filter(s => !s.already_submitted).length} Remaining)
+                ({unsubmittedSubjects.length} Remaining)
               </span>
             </h2>
 
 
-            {data.subjects.length === 0 ? (
+            {subjects.length === 0 ? (
               <EmptyState
                 icon={BookOpen}
                 title="No faculty assigned for this session"
@@ -189,7 +212,7 @@ function StudentDashboardPage() {
               />
             ) : (
               <div className="grid gap-4 sm:grid-cols-2">
-                {data.subjects.map((s) => (
+                {subjects.map((s) => (
                   <article
                     key={`${s.subject_id}-${s.faculty_id}`}
                     className={`surface-card flex flex-col gap-4 p-5 rounded-2xl border transition-all ${

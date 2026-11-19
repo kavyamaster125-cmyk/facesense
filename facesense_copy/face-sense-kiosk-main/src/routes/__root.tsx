@@ -7,7 +7,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { Toaster } from "../components/ui/sonner";
@@ -36,8 +36,33 @@ function NotFoundComponent() {
 }
 
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
-  console.error(error);
+  console.error("[Route Error Caught]:", error);
   const router = useRouter();
+  const [retried, setRetried] = useState(false);
+
+  useEffect(() => {
+    // Automatically auto-recover once immediately so transient transition glitches never stop the student
+    if (!retried) {
+      setRetried(true);
+      const timer = setTimeout(() => {
+        router.invalidate();
+        reset();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [retried, reset, router]);
+
+  // While auto-retrying, show a clean spinner instead of the error screen
+  if (!retried) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <div className="flex flex-col items-center gap-3">
+          <div className="size-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <p className="text-sm font-medium text-muted-foreground">Loading dashboard…</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">

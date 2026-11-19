@@ -164,7 +164,24 @@ export function FaceLivenessCapture({
       if (res.authenticated && res.student_id != null) {
         setState("SUCCESS");
         setStatusText(`Welcome, ${res.full_name ?? "Student"}!`);
-        onAuthenticated(res.student_id, res.full_name ?? "Student");
+
+        // Clean up camera stream and animation frame BEFORE unmounting/navigating
+        if (rafRef.current) {
+          cancelAnimationFrame(rafRef.current);
+          rafRef.current = 0;
+        }
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach((t) => t.stop());
+          streamRef.current = null;
+        }
+        if (videoRef.current) {
+          videoRef.current.srcObject = null;
+        }
+
+        // 150ms micro-pause allows camera hardware to release cleanly before router unmount
+        setTimeout(() => {
+          onAuthenticated(res.student_id, res.full_name ?? "Student");
+        }, 150);
       } else {
         setState("ERROR");
         const msg = res.message || "Face not recognized. Ensure good lighting or register your face.";
