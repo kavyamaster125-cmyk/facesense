@@ -6,7 +6,7 @@ import { logger } from "@/lib/logger";
 // ─── Tunable Constants ───────────────────────────────────────────────────────
 const EAR_BLINK_THRESHOLD = 0.23;   // EAR below this ⇒ eyes closed
 const EAR_OPEN_THRESHOLD = 0.25;    // EAR above this after close ⇒ blink confirmed
-const CLOSED_FRAMES_MIN = 1;        // 1 frame minimum for fast mobile frame rates
+const CLOSED_FRAMES_MIN = 2;        // 2 frames (≥60ms) prevents 1-frame motion blur false positives
 const FACE_STABLE_MS = 600;         // ms face must be visible before blink prompt
 
 // MediaPipe FaceMesh 468-landmark eye indices (6-point model per eye)
@@ -53,6 +53,53 @@ function computeEAR(
   const vertical2 = dist(p3, p5);
   const horizontal = dist(p1, p4);
   return (vertical1 + vertical2) / (2.0 * horizontal);
+}
+
+// ─── Head Pose / Yaw Verification ──────────────────────────────────────────
+// Prevents false positive blink triggers when rotating/turning head left or right
+function checkHeadFacingForward(landmarks: { x: number; y: number; z?: number }[]): boolean {
+  if (!landmarks || landmarks.length < 468) return true;
+
+  const nose = landmarks[1] || landmarks[4];
+  const leftEyeOuter = landmarks[33];
+  const rightEyeOuter = landmarks[263];
+  const leftCheek = landmarks[234];
+  const rightCheek = landmarks[454];
+
+  if (!nose || !leftEyeOuter || !rightEyeOuter) return true;
+
+  // 1. Horizontal eye distance
+  const eyeDist = Math.abs(rightEyeOuter.x - leftEyeOuter.x);
+  if (eyeDist < 0.04) return false;
+
+  // 2. Yaw offset: horizontal distance of nose from eye midpoint relative to eye span
+  const eyeCenterX = (leftEyeOuter.x + rightEyeOuter.x) / 2;
+  const yawOffset = Math.abs(nose.x - eyeCenterX) / eyeDist;
+  if (yawOffset > 0.16) {
+    return false; // Head is turned left or right
+  }
+
+  // 3. Cheek symmetry: when head is turned sideways, one cheek distance shrinks drastically
+  if (leftCheek && rightCheek) {
+    const dLeft = dist(nose, leftCheek);
+    const dRight = dist(nose, rightCheek);
+    if (dLeft > 0 && dRight > 0) {
+      const cheekRatio = Math.min(dLeft, dRight) / Math.max(dLeft, dRight);
+      if (cheekRatio < 0.35) {
+        return false; // Head turned sideways
+      }
+    }
+  }
+
+  // 4. Z-depth difference across eyes if 3D coordinates are available
+  if (typeof leftEyeOuter.z === "number" && typeof rightEyeOuter.z === "number") {
+    const zDiff = Math.abs(leftEyeOuter.z - rightEyeOuter.z);
+    if (zDiff > 0.065) {
+      return false; // Perspective yaw tilt
+    }
+  }
+
+  return true;
 }
 
 // ─── Drawing Helpers ─────────────────────────────────────────────────────────
@@ -384,30 +431,55 @@ export function FaceLivenessCapture({
                   setStatusText("Face detected — hold still…");
                 }
               } else {
-                if (curState !== "BLINK_PROMPT" && !blinkConfirmedRef.current) {
-                  setState("BLINK_PROMPT");
-                  setStatusText("Please blink to verify liveness 👁️");
-                }
-
-                // EAR calculation
+                // EAR calculation for each eye
                 const earLeft = computeEAR(landmarks, LEFT_EYE);
                 const earRight = computeEAR(landmarks, RIGHT_EYE);
-                const ear = (earLeft + earRight) / 2;
+                const earAvg = (earLeft + earRight) / 2;
 
-                if (!blinkConfirmedRef.current) {
-                  if (ear < EAR_BLINK_THRESHOLD) {
-                    closedFramesRef.current += 1;
-                  } else if (
-                    ear > EAR_OPEN_THRESHOLD &&
-                    closedFramesRef.current >= CLOSED_FRAMES_MIN
-                  ) {
-                    // Blink confirmed!
-                    blinkConfirmedRef.current = true;
-                    logger.info("FaceLiveness", `Blink confirmed via EAR (${ear.toFixed(3)}), captured ${closedFramesRef.current} closed frames.`);
-                    closedFramesRef.current = 0;
-                    void captureAndVerify();
-                  } else if (ear > EAR_OPEN_THRESHOLD) {
-                    closedFramesRef.current = 0;
+                // Head pose check: ensures face is looking forward, not turned left/right
+                const isFacingForward = checkHeadFacingForward(landmarks);
+
+                if (!isFacingForward) {
+                  // If head is turned sideways, reset closed counter and prompt user
+                  closedFramesRef.current = 0;
+                  if (curState === "BLINK_PROMPT") {
+                    setStatusText("Look straight at the camera to blink 👁️");
+                  }
+                } else {
+                  if (curState !== "BLINK_PROMPT" && !blinkConfirmedRef.current) {
+                    setState("BLINK_PROMPT");
+                    setStatusText("Please blink to verify liveness 👁️");
+                  } else if (curState === "BLINK_PROMPT" && closedFramesRef.current === 0) {
+                    setStatusText("Please blink to verify liveness 👁️");
+                  }
+
+                  if (!blinkConfirmedRef.current) {
+                    // Both eyes must close simultaneously (prevents single-eye perspective distortion on head turn)
+                    const bothEyesClosed = earLeft < EAR_BLINK_THRESHOLD && earRight < EAR_BLINK_THRESHOLD;
+                    // Either both eyes reopen or average EAR rises above open threshold
+                    const eyesReopened = earAvg > EAR_OPEN_THRESHOLD || (earLeft > EAR_OPEN_THRESHOLD && earRight > EAR_OPEN_THRESHOLD);
+
+                    if (bothEyesClosed) {
+                      closedFramesRef.current += 1;
+                      // Guard against prolonged eye closure (> 1.5s)
+                      if (closedFramesRef.current > 45) {
+                        closedFramesRef.current = 0;
+                      }
+                    } else if (
+                      eyesReopened &&
+                      closedFramesRef.current >= CLOSED_FRAMES_MIN
+                    ) {
+                      // Genuine blink confirmed!
+                      blinkConfirmedRef.current = true;
+                      logger.info(
+                        "FaceLiveness",
+                        `Blink confirmed via bilateral EAR (L: ${earLeft.toFixed(3)}, R: ${earRight.toFixed(3)}), captured ${closedFramesRef.current} closed frames.`
+                      );
+                      closedFramesRef.current = 0;
+                      void captureAndVerify();
+                    } else if (eyesReopened) {
+                      closedFramesRef.current = 0;
+                    }
                   }
                 }
               }
