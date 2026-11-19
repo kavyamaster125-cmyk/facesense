@@ -33,6 +33,14 @@ export function WebcamCapture({
     setStarting(true);
     setError(null);
     try {
+      if (!navigator?.mediaDevices?.getUserMedia) {
+        setError(
+          typeof window !== "undefined" && !window.isSecureContext
+            ? "Insecure origin: Browsers require HTTPS or http://localhost to access the camera."
+            : "Camera API not supported or blocked in this browser."
+        );
+        return;
+      }
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } },
         audio: false,
@@ -42,8 +50,14 @@ export function WebcamCapture({
         videoRef.current.srcObject = stream;
         await videoRef.current.play().catch(() => undefined);
       }
-    } catch {
-      setError("Camera unavailable. Allow camera access in your browser, or upload a photo.");
+    } catch (err: any) {
+      if (typeof window !== "undefined" && !window.isSecureContext) {
+        setError("Insecure connection: Browsers block camera on IP addresses. Use http://localhost:8080");
+      } else if (err?.name === "NotAllowedError" || err?.name === "PermissionDeniedError") {
+        setError("Camera permission denied. Please allow camera access in browser site settings.");
+      } else {
+        setError("Camera unavailable. Allow camera access in your browser, or upload a photo.");
+      }
     } finally {
       setStarting(false);
     }

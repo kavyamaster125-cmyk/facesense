@@ -206,6 +206,15 @@ export function FaceLivenessCapture({
     async function init() {
       // 1. Start camera
       try {
+        if (!navigator?.mediaDevices?.getUserMedia) {
+          setState("ERROR");
+          setStatusText(
+            typeof window !== "undefined" && !window.isSecureContext
+              ? "Insecure origin: Camera is disabled on HTTP IP addresses. Open via http://localhost:8080 or HTTPS."
+              : "Camera API not supported or blocked in this browser."
+          );
+          return;
+        }
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } },
           audio: false,
@@ -216,9 +225,15 @@ export function FaceLivenessCapture({
           videoRef.current.srcObject = stream;
           await videoRef.current.play().catch(() => undefined);
         }
-      } catch {
+      } catch (err: any) {
         setState("ERROR");
-        setStatusText("Camera unavailable. Allow camera access in your browser.");
+        if (typeof window !== "undefined" && !window.isSecureContext) {
+          setStatusText("Insecure connection: Browsers block camera on IP addresses. Use http://localhost:8080");
+        } else if (err?.name === "NotAllowedError" || err?.name === "PermissionDeniedError") {
+          setStatusText("Camera permission denied. Please allow camera access in browser site settings.");
+        } else {
+          setStatusText("Camera unavailable. Allow camera access in your browser.");
+        }
         return;
       }
 
