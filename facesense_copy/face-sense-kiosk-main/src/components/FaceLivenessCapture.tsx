@@ -4,10 +4,11 @@ import { studentApi, errorMessage, ApiError } from "@/lib/api";
 import { logger } from "@/lib/logger";
 
 // ─── Tunable Constants ───────────────────────────────────────────────────────
-const EAR_BLINK_THRESHOLD = 0.23;   // EAR below this ⇒ eyes closed
-const EAR_OPEN_THRESHOLD = 0.25;    // EAR above this after close ⇒ blink confirmed
-const CLOSED_FRAMES_MIN = 2;        // 2 frames (≥60ms) prevents 1-frame motion blur false positives
-const FACE_STABLE_MS = 600;         // ms face must be visible before blink prompt
+// In pixel-corrected isotropic space: open eye is ~0.28-0.38, closed eye is ~0.06-0.14
+const EAR_BLINK_THRESHOLD = 0.20;   // EAR below this in pixel space ⇒ eye closed
+const EAR_OPEN_THRESHOLD = 0.24;    // EAR above this after close ⇒ blink confirmed
+const CLOSED_FRAMES_MIN = 1;        // 1 frame minimum allows natural blinks at mobile 15-20 FPS
+const FACE_STABLE_MS = 500;         // ms face must be visible before blink prompt
 
 // MediaPipe FaceMesh 468-landmark eye indices (6-point model per eye)
 const LEFT_EYE = [33, 160, 158, 133, 153, 144] as const;
@@ -35,13 +36,23 @@ interface FaceLivenessCaptureProps {
 }
 
 // ─── EAR Calculation ─────────────────────────────────────────────────────────
-function dist(a: { x: number; y: number }, b: { x: number; y: number }) {
-  return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
+// Calculates true Euclidean distance scaled by video frame resolution (isotropic pixel space)
+function dist(
+  a: { x: number; y: number },
+  b: { x: number; y: number },
+  w: number = 1,
+  h: number = 1
+) {
+  const dx = (a.x - b.x) * w;
+  const dy = (a.y - b.y) * h;
+  return Math.sqrt(dx * dx + dy * dy);
 }
 
 function computeEAR(
   landmarks: { x: number; y: number }[],
-  indices: readonly number[]
+  indices: readonly number[],
+  w: number = 1,
+  h: number = 1
 ): number {
   const p1 = landmarks[indices[0]!]!;
   const p2 = landmarks[indices[1]!]!;
@@ -49,15 +60,20 @@ function computeEAR(
   const p4 = landmarks[indices[3]!]!;
   const p5 = landmarks[indices[4]!]!;
   const p6 = landmarks[indices[5]!]!;
-  const vertical1 = dist(p2, p6);
-  const vertical2 = dist(p3, p5);
-  const horizontal = dist(p1, p4);
+  const vertical1 = dist(p2, p6, w, h);
+  const vertical2 = dist(p3, p5, w, h);
+  const horizontal = dist(p1, p4, w, h);
+  if (horizontal <= 0) return 0;
   return (vertical1 + vertical2) / (2.0 * horizontal);
 }
 
 // ─── Head Pose / Yaw Verification ──────────────────────────────────────────
 // Prevents false positive blink triggers when rotating/turning head left or right
-function checkHeadFacingForward(landmarks: { x: number; y: number; z?: number }[]): boolean {
+function checkHeadFacingForward(
+  landmarks: { x: number; y: number; z?: number }[],
+  w: number,
+  h: number
+): boolean {
   if (!landmarks || landmarks.length < 468) return true;
 
   const nose = landmarks[1] || landmarks[4];
@@ -68,34 +84,27 @@ function checkHeadFacingForward(landmarks: { x: number; y: number; z?: number }[
 
   if (!nose || !leftEyeOuter || !rightEyeOuter) return true;
 
-  // 1. Horizontal eye distance
-  const eyeDist = Math.abs(rightEyeOuter.x - leftEyeOuter.x);
-  if (eyeDist < 0.04) return false;
+  // 1. Horizontal eye distance in true pixels
+  const eyeDistPx = Math.abs((rightEyeOuter.x - leftEyeOuter.x) * w);
+  if (eyeDistPx < 15) return false;
 
   // 2. Yaw offset: horizontal distance of nose from eye midpoint relative to eye span
-  const eyeCenterX = (leftEyeOuter.x + rightEyeOuter.x) / 2;
-  const yawOffset = Math.abs(nose.x - eyeCenterX) / eyeDist;
-  if (yawOffset > 0.16) {
-    return false; // Head is turned left or right
+  const eyeCenterXPx = ((leftEyeOuter.x + rightEyeOuter.x) / 2) * w;
+  const noseXPx = nose.x * w;
+  const yawOffset = Math.abs(noseXPx - eyeCenterXPx) / eyeDistPx;
+  if (yawOffset > 0.28) {
+    return false; // Head is turned sideways
   }
 
-  // 3. Cheek symmetry: when head is turned sideways, one cheek distance shrinks drastically
+  // 3. Cheek symmetry in true pixels: when head is turned sideways, one cheek distance shrinks drastically
   if (leftCheek && rightCheek) {
-    const dLeft = dist(nose, leftCheek);
-    const dRight = dist(nose, rightCheek);
+    const dLeft = dist(nose, leftCheek, w, h);
+    const dRight = dist(nose, rightCheek, w, h);
     if (dLeft > 0 && dRight > 0) {
       const cheekRatio = Math.min(dLeft, dRight) / Math.max(dLeft, dRight);
-      if (cheekRatio < 0.35) {
+      if (cheekRatio < 0.25) {
         return false; // Head turned sideways
       }
-    }
-  }
-
-  // 4. Z-depth difference across eyes if 3D coordinates are available
-  if (typeof leftEyeOuter.z === "number" && typeof rightEyeOuter.z === "number") {
-    const zDiff = Math.abs(leftEyeOuter.z - rightEyeOuter.z);
-    if (zDiff > 0.065) {
-      return false; // Perspective yaw tilt
     }
   }
 
@@ -308,7 +317,7 @@ export function FaceLivenessCapture({
           setState("POSITIONING");
           setStatusText("Position your face in the frame");
         }
-      }, 3000);
+      }, 10000);
 
       try {
         const mpFaceMesh = await import("@mediapipe/face_mesh");
@@ -348,8 +357,13 @@ export function FaceLivenessCapture({
           const ctx = canvas.getContext("2d");
           if (!ctx) return;
 
-          const w = canvas.width;
-          const h = canvas.height;
+          const w = video.videoWidth || canvas.width || 640;
+          const h = video.videoHeight || canvas.height || 480;
+
+          if (canvas.width !== w || canvas.height !== h) {
+            canvas.width = w;
+            canvas.height = h;
+          }
 
           // Clear & mirror
           ctx.clearRect(0, 0, w, h);
@@ -431,13 +445,13 @@ export function FaceLivenessCapture({
                   setStatusText("Face detected — hold still…");
                 }
               } else {
-                // EAR calculation for each eye
-                const earLeft = computeEAR(landmarks, LEFT_EYE);
-                const earRight = computeEAR(landmarks, RIGHT_EYE);
+                // EAR calculation for each eye in true pixel space
+                const earLeft = computeEAR(landmarks, LEFT_EYE, w, h);
+                const earRight = computeEAR(landmarks, RIGHT_EYE, w, h);
                 const earAvg = (earLeft + earRight) / 2;
 
                 // Head pose check: ensures face is looking forward, not turned left/right
-                const isFacingForward = checkHeadFacingForward(landmarks);
+                const isFacingForward = checkHeadFacingForward(landmarks, w, h);
 
                 if (!isFacingForward) {
                   // If head is turned sideways, reset closed counter and prompt user
