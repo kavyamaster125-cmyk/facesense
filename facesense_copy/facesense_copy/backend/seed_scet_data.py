@@ -163,6 +163,19 @@ def seed_all():
     try:
         print("Seeding SCET Semester 7 Computer Engineering Data...")
 
+        # 0. Seed Super Admin
+        admin = db.query(models.AdminUser).filter(models.AdminUser.email == "admin@college.edu").first()
+        if not admin:
+            admin = models.AdminUser(
+                full_name="System Super Admin",
+                email="admin@college.edu",
+                password_hash=hash_password("admin123"),
+                role="SUPER_ADMIN"
+            )
+            db.add(admin)
+            db.commit()
+            print("Super Admin seeded: admin@college.edu / admin123")
+
         # 1. Active Feedback Cycle for Sem 7
         cycle = db.query(models.FeedbackCycle).filter(models.FeedbackCycle.semester == 7).first()
         if not cycle:
@@ -213,6 +226,31 @@ def seed_all():
         db.commit()
 
         print(f"Added/Updated {len(STUDENTS_DATA)} Students (ET23BTCO001-067 & ET24BTCO801-818).")
+
+        # 2b. Auto-load registered face embeddings from seed JSON if database has none
+        if db.query(models.FaceEmbedding).count() == 0:
+            seed_json_path = os.path.join(os.path.dirname(__file__), "seed_data", "registered_faces_seed.json")
+            if os.path.exists(seed_json_path):
+                import json
+                with open(seed_json_path, "r", encoding="utf-8") as f:
+                    face_seeds = json.load(f)
+                loaded_count = 0
+                for item in face_seeds:
+                    eno = item["enrollment_no"]
+                    stu = db.query(models.Student).filter(models.Student.enrollment_no == eno).first()
+                    if stu:
+                        emb = models.FaceEmbedding(
+                            student_id=stu.id,
+                            embedding_json=item["embedding_json"],
+                            model_version=item.get("model_version", "arcface_v1")
+                        )
+                        db.add(emb)
+                        stu.is_registered = True
+                        if item.get("face_image_path"):
+                            stu.face_image_path = item["face_image_path"]
+                        loaded_count += 1
+                db.commit()
+                print(f"Auto-seeded {loaded_count} registered student face embeddings into database.")
 
         # 3. Seed Faculty Members
         fac_obj_map = {}

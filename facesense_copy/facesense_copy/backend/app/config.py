@@ -1,12 +1,18 @@
 from dotenv import load_dotenv
 import os
 
-load_dotenv()
+# Robustly locate .env in backend directory
+_backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_env_path = os.path.join(_backend_dir, ".env")
+if os.path.exists(_env_path):
+    load_dotenv(_env_path)
+else:
+    load_dotenv()
 
 # Fallback to local SQLite if DATABASE_URL is not set or empty
 DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL or DATABASE_URL.strip() == "":
-    DATABASE_URL = "sqlite:///./facefeedback.db"
+    DATABASE_URL = f"sqlite:///{os.path.join(_backend_dir, 'facefeedback.db')}"
 
 JWT_SECRET = os.getenv("JWT_SECRET", "facefeedback_ai_super_secret_jwt_key_2026")
 JWT_ALGORITHM = "HS256"
