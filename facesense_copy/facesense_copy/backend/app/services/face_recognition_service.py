@@ -16,7 +16,13 @@ os.makedirs(UPLOADS_DIR, exist_ok=True)
 INSIGHT_APP = None
 try:
     import insightface
-    INSIGHT_APP = insightface.app.FaceAnalysis(name='buffalo_s', providers=['CPUExecutionProvider'])
+    AI_ROOT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "ai")
+    local_buffalo = os.path.join(AI_ROOT_DIR, "models", "buffalo_s")
+    kwargs = {"name": "buffalo_s", "allowed_modules": ["detection", "recognition"], "providers": ["CPUExecutionProvider"]}
+    if os.path.exists(local_buffalo):
+        kwargs["root"] = AI_ROOT_DIR
+
+    INSIGHT_APP = insightface.app.FaceAnalysis(**kwargs)
     INSIGHT_APP.prepare(ctx_id=0, det_size=(640, 640))
     print("[FACE RECOGNITION] InsightFace ArcFace (512-dim) Engine Initialized Successfully!")
 except Exception as e:
