@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Loader2, Camera, CheckCircle2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { studentApi, errorMessage, ApiError } from "@/lib/api";
 import { logger } from "@/lib/logger";
-import { Button } from "@/components/ui/button";
 
 // ─── Tunable Constants ───────────────────────────────────────────────────────
 const EAR_BLINK_THRESHOLD = 0.23;   // EAR below this ⇒ eyes closed
@@ -260,7 +259,7 @@ export function FaceLivenessCapture({
         if (!cancelled && stateRef.current === "LOADING") {
           logger.warn("FaceLiveness", "MediaPipe load taking long, enabling direct camera mode.");
           setState("POSITIONING");
-          setStatusText("Ready: Position face & tap Verify Face");
+          setStatusText("Position your face in the frame");
         }
       }, 3000);
 
@@ -448,9 +447,8 @@ export function FaceLivenessCapture({
       } catch (err: any) {
         clearTimeout(loadTimeout);
         logger.warn("FaceLiveness", "MediaPipe optional mesh note (fallback to direct camera mode):", err);
-        // Do NOT block camera or fail completely; let user verify via button!
         setState("POSITIONING");
-        setStatusText("Ready: Position face & tap Verify Face");
+        setStatusText("Position your face in the frame");
       }
     }
 
@@ -525,31 +523,6 @@ export function FaceLivenessCapture({
         <div className="absolute inset-x-0 bottom-0 flex items-center justify-center bg-black/60 px-4 py-2.5 backdrop-blur-sm">
           <StatusIndicator state={state} text={statusText} />
         </div>
-      </div>
-
-      {/* Manual / Instant Verify Button */}
-      <div className="mt-3 flex flex-col gap-1.5">
-        <Button
-          type="button"
-          onClick={() => void captureAndVerify()}
-          disabled={isVerifying || state === "SUCCESS" || state === "LOADING"}
-          className="w-full h-11 text-base font-semibold shadow-md gap-2"
-        >
-          {isVerifying ? (
-            <>
-              <Loader2 className="size-5 animate-spin" />
-              Verifying Face...
-            </>
-          ) : (
-            <>
-              <Camera className="size-5" />
-              Verify Face Now
-            </>
-          )}
-        </Button>
-        <p className="text-center text-xs text-muted-foreground">
-          Tip: Blink naturally to auto-verify, or tap the button above anytime.
-        </p>
       </div>
 
       {/* Error message below camera */}
